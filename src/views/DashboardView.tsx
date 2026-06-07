@@ -63,7 +63,7 @@ export default function DashboardView(props: DashboardViewProps) {
     </div>
     <div className="text-right shrink-0">
       <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider font-mono">{t.currentSimTime}</p>
-      <p className="text-lg font-extrabold text-[#0A2E36] font-mono leading-none mt-1">2026-05-31</p>
+      <p className="text-lg font-extrabold text-[#0A2E36] font-mono leading-none mt-1">{new Date().toISOString().split('T')[0]}</p>
       <span className="text-[10px] text-slate-500 font-normal">Trøndelag, Norge</span>
     </div>
   </div>
