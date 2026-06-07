@@ -846,7 +846,7 @@ export default function App() {
         const data = await res.json();
         
         // After fetching demo state, try to fetch real members if we are not restricted to demo
-        if (!isDemoMode() && authService && (await authService.getCurrentUser())) {
+        if (!isDemoMode && authService && (await authService.getCurrentUser())) {
           const supabaseResult = await membersService.getAll();
           if (supabaseResult.data && !supabaseResult.error) {
             data.members = supabaseResult.data;
@@ -1222,7 +1222,7 @@ export default function App() {
 
   return (
     <div id="diving-ecology-education-frosta-root" className="flex h-screen w-full bg-[#F8FAFB] text-slate-800 font-sans overflow-hidden relative">
-      {isDemoMode() && <DemoBanner />}
+      {isDemoMode && <DemoBanner />}
       
       {/* 1. LEFT SIDEBAR */}
       <aside className="hidden md:flex w-72 bg-[#0A2E36] text-white flex-col h-screen shadow-xl shrink-0 overflow-hidden">
