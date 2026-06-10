@@ -1,4 +1,4 @@
-import { supabase, isDemoMode } from '../lib/supabaseClient';
+import { supabase, isDemoMode } from '../lib/supabase';
 
 export interface SupabaseEvent {
   id: string;
@@ -18,7 +18,7 @@ export interface SupabaseEvent {
 
 export const eventsService = {
   async getAll(): Promise<{ data: SupabaseEvent[] | null, error: string | null }> {
-    if (isDemoMode || !supabase) return { data: null, error: 'DEMO_MODE' };
+    if (isDemoMode() || !supabase) return { data: null, error: 'DEMO_MODE' };
     try {
       const { data, error } = await supabase.from('events').select('*').order('event_date', { ascending: true });
       if (error) return { data: null, error: error.message };
@@ -46,7 +46,7 @@ export const eventsService = {
   },
   
   async getById(id: string): Promise<{ data: SupabaseEvent | null, error: string | null }> {
-    if (isDemoMode || !supabase) return { data: null, error: 'DEMO_MODE' };
+    if (isDemoMode() || !supabase) return { data: null, error: 'DEMO_MODE' };
     try {
       const { data, error } = await supabase.from('events').select('*').eq('id', id).single();
       if (error) return { data: null, error: error.message };
@@ -72,7 +72,7 @@ export const eventsService = {
   },
 
   async create(payload: Partial<SupabaseEvent>): Promise<{ data: any, error: string | null }> {
-    if (isDemoMode || !supabase) return { data: null, error: 'DEMO_MODE' };
+    if (isDemoMode() || !supabase) return { data: null, error: 'DEMO_MODE' };
     const dbPayload = {
       title: payload.title,
       description: payload.description || null,
@@ -96,7 +96,7 @@ export const eventsService = {
   },
 
   async update(id: string, payload: Partial<SupabaseEvent>): Promise<{ data: any, error: string | null }> {
-    if (isDemoMode || !supabase) return { data: null, error: 'DEMO_MODE' };
+    if (isDemoMode() || !supabase) return { data: null, error: 'DEMO_MODE' };
     const dbPayload: any = { updated_at: new Date().toISOString() };
     if (payload.title !== undefined) dbPayload.title = payload.title;
     if (payload.description !== undefined) dbPayload.description = payload.description;
@@ -118,7 +118,7 @@ export const eventsService = {
   },
 
   async delete(id: string): Promise<{ data: any, error: string | null }> {
-    if (isDemoMode || !supabase) return { data: null, error: 'DEMO_MODE' };
+    if (isDemoMode() || !supabase) return { data: null, error: 'DEMO_MODE' };
     try {
       const { data, error } = await supabase.from('events').delete().eq('id', id);
       if (error) return { data: null, error: error.message };

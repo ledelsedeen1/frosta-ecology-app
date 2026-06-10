@@ -41,7 +41,7 @@ import { membersService } from './services/membersService';
 import { feesService, MembershipFee } from './services/feesService';
 import { documentsService, SupabaseDocument } from './services/documentsService';
 import { eventsService, SupabaseEvent } from './services/eventsService';
-import { isDemoMode } from './lib/supabaseClient';
+import { isDemoMode } from './lib/supabase';
 import { DivingLogo } from './components/DivingLogo';
 
 // ============================================================
@@ -806,6 +806,7 @@ export default function App() {
     if (res.user) {
       setUser(res.user);
       setRole(res.user.role as UserRole);
+      await fetchState();
     }
     return res;
   };
@@ -838,15 +839,25 @@ export default function App() {
   const [documents, setDocuments] = useState<SupabaseDocument[]>([]);
   const [events, setEvents] = useState<SupabaseEvent[]>([]);
 
-  const fetchState = async () => {
+  async function fetchState() {
     setLoading(true);
     try {
-      const res = await fetch('/api/state');
-      if (res.ok) {
-        const data = await res.json();
-        
-        // After fetching demo state, try to fetch real members if we are not restricted to demo
-        if (!isDemoMode && authService && (await authService.getCurrentUser())) {
+      const data = isDemoMode()
+        ? await fetch('/api/state').then(async res => {
+            if (!res.ok) throw new Error(`Demo API returned ${res.status}`);
+            return res.json();
+          })
+        : {
+            members: [],
+            events: [],
+            projects: [],
+            documents: [],
+            announcements: [],
+            logs: [],
+            messages: [],
+          };
+
+      if (!isDemoMode() && authService && (await authService.getCurrentUser())) {
           const supabaseResult = await membersService.getAll();
           if (supabaseResult.data && !supabaseResult.error) {
             data.members = supabaseResult.data;
@@ -882,7 +893,7 @@ export default function App() {
             console.warn("Supabase events fetch failed, falling back to mock data.", eventsResult.error);
             setEventsSupabaseStatus('error');
           }
-        } else {
+        } else if (isDemoMode()) {
           setMembersSupabaseStatus('demo');
           setFeesSupabaseStatus('demo');
           setDocumentsSupabaseStatus('demo');
@@ -890,13 +901,12 @@ export default function App() {
         }
 
         setState(data);
-      }
     } catch (e) {
       console.error("Error loading Diving Ecology Education Frosta state", e);
     } finally {
       setLoading(false);
     }
-  };
+  }
 
   const handleDeleteMember = async (id: string, fullName: string) => {
     if (!confirm(`GDPR Notice: Permanently erase ${fullName}?`)) return;
@@ -926,6 +936,12 @@ export default function App() {
   };
 
   const executePost = async (url: string, bodyJson: any) => {
+    if (!isDemoMode()) {
+      console.warn(`Blocked demo API mutation in live mode: ${url}`);
+      alert('This workflow is not connected to Supabase yet and is disabled in live mode.');
+      return false;
+    }
+
     try {
       const res = await fetch(url, {
         method: 'POST',
@@ -1222,7 +1238,7 @@ export default function App() {
 
   return (
     <div id="diving-ecology-education-frosta-root" className="flex h-screen w-full bg-[#F8FAFB] text-slate-800 font-sans overflow-hidden relative">
-      {isDemoMode && <DemoBanner />}
+      {isDemoMode() && <DemoBanner />}
       
       {/* 1. LEFT SIDEBAR */}
       <aside className="hidden md:flex w-72 bg-[#0A2E36] text-white flex-col h-screen shadow-xl shrink-0 overflow-hidden">

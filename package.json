@@ -1,17 +1,22 @@
 {
-  "name": "react-example",
+  "name": "diving-ecology-education-frosta-app",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
+  "description": "Member, volunteering and administration app for Diving Ecology Education Frosta",
   "type": "module",
   "scripts": {
     "dev": "tsx server.ts",
-    "build": "vite build && esbuild server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs",
+    "build": "vite build && esbuild server.ts --bundle --platform=node --format=esm --packages=external --sourcemap --outfile=dist/server.js",
     "preview": "vite preview",
-    "start": "node dist/server.cjs",
-    "clean": "rm -rf dist server.js",
-    "lint": "tsc --noEmit"
+    "start": "node dist/server.js",
+    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
+    "lint": "tsc --noEmit",
+    "mobile:sync": "npm run build && cap sync",
+    "mobile:android": "npm run mobile:sync && cap open android",
+    "mobile:ios": "npm run mobile:sync && cap open ios"
   },
   "dependencies": {
+    "@capacitor/core": "^8.4.0",
     "@google/genai": "^2.4.0",
     "@supabase/supabase-js": "^2.49.0",
     "@tailwindcss/vite": "^4.1.14",
@@ -25,6 +30,9 @@
     "vite": "^6.2.3"
   },
   "devDependencies": {
+    "@capacitor/android": "^8.4.0",
+    "@capacitor/cli": "^8.4.0",
+    "@capacitor/ios": "^8.4.0",
     "@types/express": "^4.17.21",
     "@types/node": "^22.14.0",
     "@typescript-eslint/eslint-plugin": "^8.60.1",

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Diving Ecology Education Frosta</string>
+    <string name="title_activity_main">Diving Ecology Education Frosta</string>
+    <string name="package_name">no.divingecologyfrosta.app</string>
+    <string name="custom_url_scheme">no.divingecologyfrosta.app</string>
+</resources>
