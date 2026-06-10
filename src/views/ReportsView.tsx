@@ -40,7 +40,7 @@ export default function ReportsView(props: ReportsViewProps) {
   const t = translations[lang] || translations.no;
   const [selectedYear, setSelectedYear] = React.useState<number>(new Date().getFullYear());
 
-  const processedFees = React.useMemo(() => {
+  const processedFees = React.useMemo<ReportFee[]>(() => {
     const list: ReportFee[] = [];
     if (feesSupabaseStatus === 'connected') {
       for (const f of fees) {
@@ -82,7 +82,9 @@ export default function ReportsView(props: ReportsViewProps) {
     return list;
   }, [fees, payments, feesSupabaseStatus, state?.members]);
 
-  const availableYears = Array.from(new Set(processedFees.map(f => f.year))).sort((a,b) => b-a);
+  const availableYears: number[] = Array.from(
+    new Set<number>(processedFees.map(f => Number(f.year)))
+  ).sort((a, b) => b - a);
   if (!availableYears.includes(selectedYear)) {
     availableYears.push(selectedYear);
     availableYears.sort((a,b) => b-a);

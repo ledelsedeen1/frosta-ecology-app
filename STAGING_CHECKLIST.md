@@ -50,7 +50,8 @@ Standard membership fee 2026: 350.00 NOK
 
 ### If this step fails
 - If the name `frosta-staging` is already taken, use `frosta-staging-2026`
-- If provisioning is stuck beyond 5 minutes, delete the project and retry
+- If provisioning is stuck beyond 5 minutes, stop and verify the project status.
+  Do not delete it without explicit confirmation.
 - Do not mix region codes (e.g. eu-west-1) with city names in documentation
 
 ---
@@ -67,7 +68,8 @@ Region shows an EU location close to Norway, either:
 
 ### If this step fails
 Region cannot be changed after project creation.
-Delete the project and create a new one with the correct region.
+Stop the migration. Create a separate correctly located staging project only
+after explicit confirmation; do not delete the existing project automatically.
 
 ---
 
@@ -199,9 +201,11 @@ ORDER BY tablename;
 ```
 
 ### If any migration fails
-- "already exists" errors are safe if a migration was run twice — add `DROP ... IF EXISTS` and retry
+- If an object already exists, stop and run `supabase/preflight_audit.sql`.
+  Do not add broad `DROP` statements.
 - "function handle_updated_at does not exist" in 0004–0006 means 0002 must run first
-- "invalid input value" on payment_status means the old constraint (pending/paid/overdue/refunded) exists — drop and recreate the table
+- "invalid input value" on payment_status means the old constraint may exist.
+  Preserve the table and data; prepare a targeted constraint/data migration after a backup.
 - Never use `DROP TABLE` or `DROP FUNCTION` on `frosta-production`
 
 ---
@@ -318,7 +322,8 @@ FROM public.members ORDER BY member_number;
 ### If this step fails
 - "ON CONFLICT" notices are safe — seed is idempotent
 - "violates check constraint member_number_format" — check that member numbers match YYYY-NNN exactly
-- "invalid input value for payment_status" — the constraint must use `unpaid, pending_confirmation, confirmed, waived` — re-run 0005
+- "invalid input value for payment_status" — run the preflight audit and use a
+  targeted additive migration. Re-running 0005 does not alter an existing table.
 
 ---
 
@@ -550,7 +555,8 @@ WHERE m.member_number = '2026-005';
 
 ### If this step fails
 - "invalid input value for payment_status" — the constraint must use exactly `unpaid`, `pending_confirmation`, `confirmed`, `waived` — not `pending`, `paid`, `overdue`, or `refunded`
-- Re-run 0005_create_membership_fees.sql if the old constraint is in place
+- Do not re-run 0005 as a repair for an existing table. Use the preflight audit,
+  back up the database and apply a reviewed targeted constraint migration.
 - Audit log insert fails with null `auth.uid()` — run as an authenticated user, not from the anonymous SQL editor
 
 ---

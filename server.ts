@@ -33,7 +33,28 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-app.use(express.json());
+app.disable('x-powered-by');
+app.use(express.json({ limit: '64kb' }));
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  next();
+});
+
+const demoApiEnabled =
+  process.env.ENABLE_DEMO_API === 'true' ||
+  process.env.NODE_ENV !== 'production';
+
+app.use('/api', (_req, res, next) => {
+  if (!demoApiEnabled) {
+    return res.status(503).json({
+      error: 'The in-memory demo API is disabled. Use authenticated Supabase services.',
+    });
+  }
+  res.setHeader('Cache-Control', 'no-store');
+  next();
+});
 
 // --- IN-MEMORY DATABASE SEED ---
 

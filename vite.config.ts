@@ -13,25 +13,35 @@ export default defineConfig(() => {
         registerType: 'autoUpdate',
         includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'logo.png'],
         manifest: {
+          id: '/',
           name: 'Diving Ecology Education Frosta',
-          short_name: 'DEEF',
-          description: 'Member and administration app for Diving Ecology Education Frosta',
+          short_name: 'Diving Ecology',
+          description: 'Member, volunteering and administration app for Diving Ecology Education Frosta',
           theme_color: '#0f3d5e',
           background_color: '#ffffff',
           display: 'standalone',
           start_url: '/',
           scope: '/',
-          orientation: 'portrait',
+          orientation: 'any',
+          categories: ['education', 'lifestyle', 'utilities'],
           icons: [
             {
               src: 'icons/icon-192.png',
               sizes: '192x192',
-              type: 'image/png'
+              type: 'image/png',
+              purpose: 'any'
             },
             {
               src: 'icons/icon-512.png',
               sizes: '512x512',
-              type: 'image/png'
+              type: 'image/png',
+              purpose: 'any'
+            },
+            {
+              src: 'icons/maskable-icon-512.png',
+              sizes: '512x512',
+              type: 'image/png',
+              purpose: 'maskable'
             }
           ]
         },

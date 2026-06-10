@@ -1,4 +1,4 @@
-import { supabase, isDemoMode } from '../lib/supabaseClient';
+import { supabase, isDemoMode } from '../lib/supabase';
 
 export interface SupabaseDocument {
   id: string;
@@ -15,7 +15,7 @@ export interface SupabaseDocument {
 
 export const documentsService = {
   async getAll(): Promise<{ data: SupabaseDocument[] | null, error: string | null }> {
-    if (isDemoMode || !supabase) return { data: null, error: 'DEMO_MODE' };
+    if (isDemoMode() || !supabase) return { data: null, error: 'DEMO_MODE' };
     try {
       const { data, error } = await supabase.from('documents').select('*').order('created_at', { ascending: false });
       if (error) return { data: null, error: error.message };
@@ -40,7 +40,7 @@ export const documentsService = {
   },
   
   async getById(id: string): Promise<{ data: SupabaseDocument | null, error: string | null }> {
-    if (isDemoMode || !supabase) return { data: null, error: 'DEMO_MODE' };
+    if (isDemoMode() || !supabase) return { data: null, error: 'DEMO_MODE' };
     try {
       const { data, error } = await supabase.from('documents').select('*').eq('id', id).single();
       if (error) return { data: null, error: error.message };
@@ -64,7 +64,7 @@ export const documentsService = {
   },
 
   async create(payload: Partial<SupabaseDocument>): Promise<{ data: any, error: string | null }> {
-    if (isDemoMode || !supabase) return { data: null, error: 'DEMO_MODE' };
+    if (isDemoMode() || !supabase) return { data: null, error: 'DEMO_MODE' };
     const dbPayload = {
       title: payload.title,
       description: payload.description || null,
@@ -85,7 +85,7 @@ export const documentsService = {
   },
 
   async update(id: string, payload: Partial<SupabaseDocument>): Promise<{ data: any, error: string | null }> {
-    if (isDemoMode || !supabase) return { data: null, error: 'DEMO_MODE' };
+    if (isDemoMode() || !supabase) return { data: null, error: 'DEMO_MODE' };
     const dbPayload: any = { updated_at: new Date().toISOString() };
     if (payload.title !== undefined) dbPayload.title = payload.title;
     if (payload.description !== undefined) dbPayload.description = payload.description;
@@ -104,7 +104,7 @@ export const documentsService = {
   },
 
   async delete(id: string): Promise<{ data: any, error: string | null }> {
-    if (isDemoMode || !supabase) return { data: null, error: 'DEMO_MODE' };
+    if (isDemoMode() || !supabase) return { data: null, error: 'DEMO_MODE' };
     try {
       // Trying to delete. A safer approach would be archive if there is an `archived` column, but schema.sql might not have it. Let's delete.
       const { data, error } = await supabase.from('documents').delete().eq('id', id);

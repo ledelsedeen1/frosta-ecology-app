@@ -1,3 +1,8 @@
+-- WARNING: LEGACY FILE - DO NOT EXECUTE.
+-- The authoritative schema is supabase/migrations/0001 through 0009.
+-- This file is retained only to document the earlier prototype model.
+-- It conflicts with the current role, member and payment column names.
+
 -- Supabase Structure for Diving Ecology Education Frosta
 -- This file contains table creation scripts and Row Level Security (RLS) policies.
 
