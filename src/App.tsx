@@ -36,6 +36,7 @@ import PrivacyView from './views/PrivacyView';
 import NotificationsView from './views/NotificationsView';
 import PrivacyPolicyView from './views/PrivacyPolicyView';
 import LoginView from './views/LoginView';
+import UpdatePasswordView from './views/UpdatePasswordView';
 import { authService, UserSession } from './services/authService';
 import { membersService } from './services/membersService';
 import { feesService, MembershipFee } from './services/feesService';
@@ -602,6 +603,12 @@ export default function App() {
   };
   const [user, setUser] = useState<UserSession | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [passwordRecoveryMode, setPasswordRecoveryMode] = useState(() => (
+    typeof window !== 'undefined'
+      ? authService.isPasswordRecoveryUrl(window.location.href)
+      : false
+  ));
+  const [passwordRecoveryError, setPasswordRecoveryError] = useState(false);
 
   const [state, setState] = useState<{
     members: Member[];
@@ -801,6 +808,25 @@ export default function App() {
     fetchState();
   }, []);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (!authService.isPasswordRecoveryUrl(window.location.href)) return;
+
+    let cancelled = false;
+    setPasswordRecoveryMode(true);
+    setPasswordRecoveryError(false);
+    setAuthLoading(false);
+
+    authService.consumePasswordRecoveryUrl(window.location.href).then(result => {
+      if (cancelled) return;
+      setPasswordRecoveryError(Boolean(result.error || !result.recovered));
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const handleLogin = async (email: string, pass: string) => {
     const res = await authService.login(email, pass);
     if (res.user) {
@@ -809,6 +835,25 @@ export default function App() {
       await fetchState();
     }
     return res;
+  };
+
+  const handleRequestPasswordReset = async (email: string) => {
+    return authService.requestPasswordReset(email);
+  };
+
+  const handleUpdatePassword = async (password: string) => {
+    if (passwordRecoveryError) return { error: 'PASSWORD_RECOVERY_LINK_INVALID' };
+    return authService.updatePassword(password);
+  };
+
+  const handleReturnToLogin = () => {
+    setPasswordRecoveryMode(false);
+    setPasswordRecoveryError(false);
+    setUser(null);
+    setRole('guest');
+    if (typeof window !== 'undefined') {
+      window.history.replaceState({}, document.title, '/');
+    }
   };
   
   const handleLogout = async () => {
@@ -1232,8 +1277,25 @@ export default function App() {
     );
   }
 
+  if (passwordRecoveryMode) {
+    return (
+      <UpdatePasswordView
+        lang={lang}
+        initialLinkError={passwordRecoveryError}
+        onUpdatePassword={handleUpdatePassword}
+        onReturnToLogin={handleReturnToLogin}
+      />
+    );
+  }
+
   if (!user) {
-    return <LoginView lang={lang} onLogin={handleLogin} />;
+    return (
+      <LoginView
+        lang={lang}
+        onLogin={handleLogin}
+        onRequestPasswordReset={handleRequestPasswordReset}
+      />
+    );
   }
 
   return (
