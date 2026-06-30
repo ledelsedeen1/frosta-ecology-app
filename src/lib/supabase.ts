@@ -18,9 +18,7 @@ const supabaseAnonKey: string = _env.VITE_SUPABASE_ANON_KEY ?? '';
  * and no Supabase requests are made.
  */
 export function isDemoMode(): boolean {
-  const val: string | undefined = String(_env.VITE_DEMO_MODE ?? '');
-  // Default to demo mode if env var is not set
-  if (!val || val === 'undefined') return true;
+  const val = String(_env.VITE_DEMO_MODE ?? '').trim().toLowerCase();
   return val === 'true';
 }
 

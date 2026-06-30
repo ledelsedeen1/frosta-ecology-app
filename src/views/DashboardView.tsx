@@ -41,6 +41,15 @@ export default function DashboardView(props: DashboardViewProps) {
   } = props;
   
   const t = translations[lang] || translations.no;
+  const currentDateLabel = lang === 'pl'
+    ? 'DZISIEJSZA DATA'
+    : lang === 'en'
+      ? 'CURRENT DATE'
+      : 'DAGENS DATO';
+  const volunteerHours = state?.members?.reduce(
+    (acc, m) => acc + (m.activityHistory || []).reduce((a2, h) => a2 + (h.hours || 0), 0),
+    0,
+  ) ?? 0;
 
   return (
 <div className="space-y-6">
@@ -62,7 +71,7 @@ export default function DashboardView(props: DashboardViewProps) {
       </div>
     </div>
     <div className="text-right shrink-0">
-      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider font-mono">{t.currentSimTime}</p>
+      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider font-mono">{currentDateLabel}</p>
       <p className="text-lg font-extrabold text-[#0A2E36] font-mono leading-none mt-1">{new Date().toISOString().split('T')[0]}</p>
       <span className="text-[10px] text-slate-500 font-normal">Trøndelag, Norge</span>
     </div>
@@ -97,7 +106,7 @@ export default function DashboardView(props: DashboardViewProps) {
       <div>
         <span className="text-[10px] text-slate-400 uppercase tracking-widest font-black font-mono">{t.volunteerWork}</span>
         <h3 className="text-2xl font-black text-[#0A2E36] mt-1">
-          {state?.members.reduce((acc, m) => acc + m.activityHistory.reduce((a2, h) => a2 + (h.hours || 0), 0), 0)} hrs
+          {volunteerHours} hrs
         </h3>
         <p className="text-[10px] text-blue-600 font-bold mt-1">Accumulated hours</p>
       </div>

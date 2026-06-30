@@ -44,6 +44,7 @@ import { documentsService, SupabaseDocument } from './services/documentsService'
 import { eventsService, SupabaseEvent } from './services/eventsService';
 import { isDemoMode } from './lib/supabase';
 import { DivingLogo } from './components/DivingLogo';
+import { isBoardOrAdminRole, isGuestRole, normalizeRole } from './roleUtils';
 
 // ============================================================
 // BANK TRANSFER PAYMENTS & DONATIONS MODULE
@@ -293,7 +294,7 @@ export function PaymentAdminPanel({
   const [settingsEdit, setSettingsEdit] = React.useState(false);
   const [localSettings, setLocalSettings] = React.useState({...ASSOC_SETTINGS});
 
-  if(userRole !== 'admin' && userRole !== 'board') {
+  if(!isBoardOrAdminRole(userRole)) {
     return (
       <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
         <span className="text-3xl">🔒</span>
@@ -688,7 +689,7 @@ export default function App() {
         fullName: user.fullName,
         email: user.email,
         preferredLanguage: lang,
-        role: user.role as UserRole
+        role: normalizeRole(user.role)
       };
     }
     
@@ -801,7 +802,7 @@ export default function App() {
     authService.getCurrentUser().then(u => {
       setUser(u);
       if (u) {
-        setRole(u.role as UserRole);
+        setRole(normalizeRole(u.role));
       }
       setAuthLoading(false);
     });
@@ -831,7 +832,7 @@ export default function App() {
     const res = await authService.login(email, pass);
     if (res.user) {
       setUser(res.user);
-      setRole(res.user.role as UserRole);
+      setRole(normalizeRole(res.user.role));
       await fetchState();
     }
     return res;
@@ -887,20 +888,23 @@ export default function App() {
   async function fetchState() {
     setLoading(true);
     try {
-      const data = isDemoMode()
-        ? await fetch('/api/state').then(async res => {
-            if (!res.ok) throw new Error(`Demo API returned ${res.status}`);
-            return res.json();
-          })
-        : {
-            members: [],
-            events: [],
-            projects: [],
-            documents: [],
-            announcements: [],
-            logs: [],
-            messages: [],
-          };
+      const data: {
+        members: Member[];
+        events: Event[];
+        projects: Project[];
+        documents: DocumentMeta[];
+        announcements: Announcement[];
+        logs: SystemLog[];
+        messages: Message[];
+      } = {
+        members: [],
+        events: [],
+        projects: [],
+        documents: [],
+        announcements: [],
+        logs: [],
+        messages: [],
+      };
 
       if (!isDemoMode() && authService && (await authService.getCurrentUser())) {
           const supabaseResult = await membersService.getAll();
@@ -1199,15 +1203,16 @@ export default function App() {
 
   // Switch translations
   const t = translations[lang] || translations.no;
+  const normalizedCurrentRole = normalizeRole(role);
 
   // Filters based on Role limits
   const visibleAnnouncements = state?.announcements.filter(a => {
-    if (role === 'guest') return !a.isPrivate;
+    if (isGuestRole(normalizedCurrentRole)) return !a.isPrivate;
     return true;
   }) || [];
 
   const visibleDocuments = state?.documents.filter(d => {
-    if (role === 'guest' || role === 'member' || role === 'volunteer') {
+    if (!isBoardOrAdminRole(normalizedCurrentRole)) {
       return !d.isPrivate;
     }
     return true;
@@ -1222,7 +1227,7 @@ export default function App() {
 
   const loggedUser = getLoggedInUser();
   const unreadMsgCount = state?.messages.filter(m => {
-    if (m.visibility === 'board_only' && loggedUser.role !== 'board' && loggedUser.role !== 'admin') return false;
+    if (m.visibility === 'board_only' && !isBoardOrAdminRole(loggedUser.role)) return false;
     return !m.readBy.includes(loggedUser.id);
   }).length || 0;
 
@@ -1379,14 +1384,14 @@ export default function App() {
             </div>
             <div className="flex items-center space-x-3 p-2 bg-white/5 rounded-lg text-slate-300">
               <div className="w-8 h-8 rounded-full bg-[#48C0D8] text-[#0A2E36] flex items-center justify-center font-black text-xs shrink-0">
-                {role === 'admin' ? 'AD' : role === 'board' ? 'BD' : role === 'volunteer' ? 'VO' : role === 'member' ? 'ME' : 'GS'}
+                {normalizedCurrentRole === 'admin' ? 'AD' : normalizedCurrentRole === 'board' ? 'BD' : normalizedCurrentRole === 'volunteer' ? 'VO' : normalizedCurrentRole === 'member' ? 'ME' : 'GS'}
               </div>
               <div className="overflow-hidden">
                 <p className="text-xs font-semibold truncate leading-none mb-1 text-white">
                   {getLoggedInUser().fullName}
                 </p>
                 <p className="text-[10px] text-[#48C0D8] capitalize leading-none font-bold">
-                  {t[role] || role}
+                  {t[normalizedCurrentRole] || normalizedCurrentRole}
                 </p>
               </div>
             </div>
@@ -1476,7 +1481,7 @@ export default function App() {
               </button>
             </div>
 
-            {role !== 'guest' && (
+            {!isGuestRole(normalizedCurrentRole) && (
               <button 
                 onClick={() => {
                   setMemberForm(prev => ({ ...prev, status: 'new_applicant' }));
@@ -1489,7 +1494,7 @@ export default function App() {
               </button>
             )}
 
-            {(role === 'board' || role === 'admin') && (
+            {isBoardOrAdminRole(normalizedCurrentRole) && (
               <button 
                 onClick={() => setShowEventModal(true)} 
                 className="bg-[#0A2E36] hover:bg-[#124b56] text-[#48C0D8] px-4 py-1.5 rounded-lg text-xs font-semibold shadow flex items-center space-x-1 cursor-pointer"
@@ -1528,7 +1533,7 @@ export default function App() {
             {activeTab === 'dashboard' && <DashboardView
               state={state}
               lang={lang}
-              role={role}
+              role={normalizedCurrentRole}
               activePersona={activePersona}
               activeMembersTotal={activeMembersTotal}
               pendingMembers={pendingMembers}
@@ -1551,7 +1556,7 @@ export default function App() {
             {activeTab === 'members' && <MembersView
               state={state}
               lang={lang}
-              role={role}
+              role={normalizedCurrentRole}
               activePersona={activePersona}
               setActiveTab={setActiveTab}
               pendingMembers={pendingMembers}
@@ -1582,7 +1587,7 @@ export default function App() {
               events={events}
               eventsSupabaseStatus={eventsSupabaseStatus}
               lang={lang}
-              role={role}
+              role={normalizedCurrentRole}
               activePersona={activePersona}
               setActiveTab={setActiveTab}
               showEventModal={showEventModal}
@@ -1601,7 +1606,7 @@ export default function App() {
               feesSupabaseStatus={feesSupabaseStatus}
               handleUpdateSupabaseFee={handleUpdateSupabaseFee}
               lang={lang}
-              role={role}
+              role={normalizedCurrentRole}
               activePersona={activePersona}
               setActiveTab={setActiveTab}
               payments={payments}
@@ -1637,7 +1642,7 @@ export default function App() {
             {activeTab === 'volunteers' && <VolunteersView
               state={state}
               lang={lang}
-              role={role}
+              role={normalizedCurrentRole}
               activePersona={activePersona}
               setActiveTab={setActiveTab}
               estimatedCleanupTrashKg={estimatedCleanupTrashKg}
@@ -1647,7 +1652,7 @@ export default function App() {
             {activeTab === 'projects' && <ProjectsView
               state={state}
               lang={lang}
-              role={role}
+              role={normalizedCurrentRole}
               activePersona={activePersona}
               setActiveTab={setActiveTab}
               showProjModal={showProjModal}
@@ -1673,7 +1678,7 @@ export default function App() {
               documents={documents}
               documentsSupabaseStatus={documentsSupabaseStatus}
               lang={lang}
-              role={role}
+              role={normalizedCurrentRole}
               activePersona={activePersona}
               setActiveTab={setActiveTab}
               showDocModal={showDocModal}
@@ -1687,7 +1692,7 @@ export default function App() {
             {activeTab === 'communication' && <CommsView
               state={state}
               lang={lang}
-              role={role}
+              role={normalizedCurrentRole}
               activePersona={activePersona}
               setActiveTab={setActiveTab}
               msgText={msgText}
@@ -1721,19 +1726,19 @@ export default function App() {
             />}
 
             {/* TAB: REPORTS */}
-            {activeTab === 'reports' && <ReportsView state={state} lang={lang} role={role} activePersona={activePersona} setActiveTab={setActiveTab} activeMembersTotal={activeMembersTotal} estimatedCleanupTrashKg={estimatedCleanupTrashKg} fees={fees} feesSupabaseStatus={feesSupabaseStatus} payments={payments} />}
+            {activeTab === 'reports' && <ReportsView state={state} lang={lang} role={normalizedCurrentRole} activePersona={activePersona} setActiveTab={setActiveTab} activeMembersTotal={activeMembersTotal} estimatedCleanupTrashKg={estimatedCleanupTrashKg} fees={fees} feesSupabaseStatus={feesSupabaseStatus} payments={payments} />}
 
             {/* TAB: MEMBERSHIP CARDS */}
             {activeTab === 'membership_card' && (
               <MembershipCardsPage
-                viewerRole={role}
+                viewerRole={normalizedCurrentRole}
                 viewerMemberId={getLoggedInUser().id}
                 lang={lang}
               />
             )}
 
             {/* TAB: PRIVACY */}
-            {activeTab === 'privacy' && <PrivacyView state={state} lang={lang} role={role} activePersona={activePersona} setActiveTab={setActiveTab} executePost={executePost} fetchState={fetchState} />}
+            {activeTab === 'privacy' && <PrivacyView state={state} lang={lang} role={normalizedCurrentRole} activePersona={activePersona} setActiveTab={setActiveTab} executePost={executePost} fetchState={fetchState} />}
 
             {/* Footer */}
             <footer className="border-t border-slate-200 pt-6 text-center text-xs text-slate-450 font-medium space-y-3 flex flex-col items-center justify-center shrink-0">
@@ -2042,7 +2047,7 @@ export default function App() {
             </div>
 
             <div className="mt-6 space-y-2 shrink-0">
-              {!isEditingMember && (role === 'board' || role === 'admin') && (
+              {!isEditingMember && isBoardOrAdminRole(normalizedCurrentRole) && (
                 <button 
                   onClick={() => setIsEditingMember(true)}
                   className="w-full bg-[#278EA5] hover:bg-[#1c6a7c] text-white font-bold text-xs py-2 rounded-lg cursor-pointer transition shadow text-center"

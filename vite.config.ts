@@ -11,13 +11,13 @@ export default defineConfig(() => {
       tailwindcss(),
       VitePWA({
         registerType: 'autoUpdate',
-        includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'logo.png'],
+        includeAssets: ['favicon.png', 'apple-touch-icon.png', 'logo.png'],
         manifest: {
           id: '/',
           name: 'Diving Ecology Education Frosta',
           short_name: 'Diving Ecology',
           description: 'Member, volunteering and administration app for Diving Ecology Education Frosta',
-          theme_color: '#0f3d5e',
+          theme_color: '#0A2E36',
           background_color: '#ffffff',
           display: 'standalone',
           start_url: '/',
@@ -26,19 +26,19 @@ export default defineConfig(() => {
           categories: ['education', 'lifestyle', 'utilities'],
           icons: [
             {
-              src: 'icons/icon-192.png',
+              src: '/icons/icon-192.png',
               sizes: '192x192',
               type: 'image/png',
               purpose: 'any'
             },
             {
-              src: 'icons/icon-512.png',
+              src: '/icons/icon-512.png',
               sizes: '512x512',
               type: 'image/png',
               purpose: 'any'
             },
             {
-              src: 'icons/maskable-icon-512.png',
+              src: '/icons/maskable-icon-512.png',
               sizes: '512x512',
               type: 'image/png',
               purpose: 'maskable'
