@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { MembershipCardComponent } from './MembershipCardComponent';
 import { MembershipCard, UserRole, MemberStatus, MembershipFeeStatus } from './types';
 import { translations } from './translations';
+import { isBoardOrAdminRole, isGuestRole, normalizeRole } from './roleUtils';
 
 interface MembershipCardsPageProps {
   viewerRole: UserRole;
@@ -172,8 +173,9 @@ export function MembershipCardsPage({
   const [selectedCardForModal, setSelectedCardForModal] = useState<MembershipCard | null>(null);
 
   // Helper check for authorization
-  const isGuest = viewerRole === 'guest';
-  const isBoardOrAdmin = viewerRole === 'board' || viewerRole === 'admin';
+  const normalizedViewerRole = normalizeRole(viewerRole);
+  const isGuest = isGuestRole(viewerRole);
+  const isBoardOrAdmin = isBoardOrAdminRole(viewerRole);
 
   // Photo Consent Configurator
   const [tempConsent, setTempConsent] = useState({
@@ -383,7 +385,7 @@ export function MembershipCardsPage({
           </p>
         </div>
         <div className="text-xs text-slate-500 font-medium bg-slate-50 border border-slate-200 rounded-lg py-1 px-2.5 self-start">
-          Moderator/Styre visning: <span className="font-bold text-[#278EA5]">{viewerRole.toUpperCase()}</span>
+          Moderator/Styre visning: <span className="font-bold text-[#278EA5]">{normalizedViewerRole.toUpperCase()}</span>
         </div>
       </div>
 

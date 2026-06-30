@@ -4,7 +4,14 @@
  */
 
 export type Lang = 'no' | 'pl' | 'en';
-export type UserRole = 'guest' | 'member' | 'volunteer' | 'board' | 'admin';
+export type UserRole =
+  | 'guest'
+  | 'member'
+  | 'volunteer'
+  | 'board'
+  | 'board_member'
+  | 'admin'
+  | 'administrator';
 
 export type MemberType = 'individual' | 'youth' | 'supporting' | 'family';
 export type MemberStatus =

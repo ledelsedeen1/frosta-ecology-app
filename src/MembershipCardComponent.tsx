@@ -6,6 +6,7 @@ import {
 import { motion } from 'motion/react';
 import { MembershipCard, UserRole } from './types';
 import { translations } from './translations';
+import { isBoardOrAdminRole, isGuestRole } from './roleUtils';
 
 interface MembershipCardComponentProps {
   card: MembershipCard;
@@ -28,9 +29,9 @@ export function MembershipCardComponent({
   const [downloadMessage, setDownloadMessage] = useState<string | null>(null);
 
   // Access Control Checks
-  const isGuest = viewerRole === 'guest';
+  const isGuest = isGuestRole(viewerRole);
   const isOwnCard = viewerMemberId === card.memberId;
-  const isBoardOrAdmin = viewerRole === 'board' || viewerRole === 'admin';
+  const isBoardOrAdmin = isBoardOrAdminRole(viewerRole);
   const canViewCard = !isGuest && (isOwnCard || isBoardOrAdmin);
 
   // Photo Visibility Check

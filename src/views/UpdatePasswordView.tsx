@@ -22,6 +22,7 @@ const copy = {
     success: 'Passordet er endret. Du kan nå logge inn.',
     error: 'Kunne ikke lagre det nye passordet. Be om en ny tilbakestillingslenke og prøv igjen.',
     linkError: 'Tilbakestillingslenken er ugyldig eller utløpt. Be om en ny lenke.',
+    unavailable: 'Passordtilbakestilling er ikke tilgjengelig fordi Supabase ikke er konfigurert.',
     login: 'Logg inn',
   },
   pl: {
@@ -35,6 +36,7 @@ const copy = {
     success: 'Hasło zostało zmienione. Możesz się teraz zalogować.',
     error: 'Nie udało się zapisać nowego hasła. Poproś o nowy link resetujący i spróbuj ponownie.',
     linkError: 'Link resetujący jest nieprawidłowy lub wygasł. Poproś o nowy link.',
+    unavailable: 'Reset hasła nie jest dostępny, ponieważ Supabase nie jest skonfigurowany.',
     login: 'Zaloguj',
   },
   en: {
@@ -48,6 +50,7 @@ const copy = {
     success: 'Password has been changed. You can now log in.',
     error: 'Could not save the new password. Request a new reset link and try again.',
     linkError: 'The reset link is invalid or has expired. Request a new link.',
+    unavailable: 'Password reset is not available because Supabase is not configured.',
     login: 'Log in',
   },
 };
@@ -87,7 +90,11 @@ export default function UpdatePasswordView({
     setLoading(false);
 
     if (result.error) {
-      setError(text.error);
+      setError(
+        result.error === 'PASSWORD_RESET_UNAVAILABLE'
+          ? text.unavailable
+          : text.error,
+      );
       return;
     }
     setSuccess(true);

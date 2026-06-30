@@ -25,6 +25,8 @@ const copy = {
     resetSubmitting: 'Sender...',
     resetSuccess: 'Hvis kontoen finnes, er en tilbakestillingslenke sendt til e-postadressen.',
     resetError: 'Kunne ikke sende tilbakestillingslenke. Sjekk e-postadressen og prøv igjen.',
+    invalidEmail: 'Skriv inn en gyldig e-postadresse.',
+    resetUnavailable: 'Passordtilbakestilling er ikke tilgjengelig fordi Supabase ikke er konfigurert.',
     backToLogin: 'Tilbake til innlogging',
   },
   pl: {
@@ -41,6 +43,8 @@ const copy = {
     resetSubmitting: 'Wysyłanie...',
     resetSuccess: 'Jeśli konto istnieje, link resetujący został wysłany na podany adres e-mail.',
     resetError: 'Nie udało się wysłać linku resetującego. Sprawdź adres e-mail i spróbuj ponownie.',
+    invalidEmail: 'Wpisz poprawny adres e-mail.',
+    resetUnavailable: 'Reset hasła nie jest dostępny, ponieważ Supabase nie jest skonfigurowany.',
     backToLogin: 'Wróć do logowania',
   },
   en: {
@@ -57,6 +61,8 @@ const copy = {
     resetSubmitting: 'Sending...',
     resetSuccess: 'If the account exists, a reset link has been sent to the email address.',
     resetError: 'Could not send the reset link. Check the email address and try again.',
+    invalidEmail: 'Enter a valid email address.',
+    resetUnavailable: 'Password reset is not available because Supabase is not configured.',
     backToLogin: 'Back to login',
   },
 };
@@ -94,12 +100,22 @@ export default function LoginView({ lang, onLogin, onRequestPasswordReset }: Log
     e.preventDefault();
     setResetError(null);
     setResetMessage(null);
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      setResetError(text.invalidEmail);
+      return;
+    }
+
     setResetLoading(true);
 
     try {
       const result = await onRequestPasswordReset(email);
       if (result.error) {
-        setResetError(text.resetError);
+        setResetError(
+          result.error === 'PASSWORD_RESET_UNAVAILABLE'
+            ? text.resetUnavailable
+            : text.resetError,
+        );
       } else {
         setResetMessage(text.resetSuccess);
       }

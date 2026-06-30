@@ -1,5 +1,6 @@
 import { supabase, isDemoMode } from '../lib/supabase';
 import type { User } from '@supabase/supabase-js';
+import { normalizeRole } from '../roleUtils';
 
 const ANDROID_PASSWORD_RECOVERY_REDIRECT_URL =
   'no.divingecologyfrosta.app://auth/reset-password';
@@ -19,7 +20,7 @@ function mapDatabaseRoles(roleNames: string[] | null): string {
   if (roleNames?.includes('board_member')) return 'board';
   if (roleNames?.includes('volunteer')) return 'volunteer';
   if (roleNames?.includes('member')) return 'member';
-  return 'guest';
+  return normalizeRole(roleNames?.[0]);
 }
 
 async function loadUserSession(user: User): Promise<UserSession> {
