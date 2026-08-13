@@ -25,7 +25,9 @@ const copy = {
     resetSubmitting: 'Sender...',
     resetSuccess: 'Hvis kontoen finnes, er en tilbakestillingslenke sendt til e-postadressen.',
     resetError: 'Kunne ikke sende tilbakestillingslenke. Sjekk e-postadressen og prøv igjen.',
+    emailRequired: 'Skriv inn e-postadressen din.',
     invalidEmail: 'Skriv inn en gyldig e-postadresse.',
+    rateLimited: 'For mange forespørsler om passordtilbakestilling. Vent litt og prøv igjen.',
     resetUnavailable: 'Passordtilbakestilling er ikke tilgjengelig fordi Supabase ikke er konfigurert.',
     backToLogin: 'Tilbake til innlogging',
   },
@@ -43,7 +45,9 @@ const copy = {
     resetSubmitting: 'Wysyłanie...',
     resetSuccess: 'Jeśli konto istnieje, link resetujący został wysłany na podany adres e-mail.',
     resetError: 'Nie udało się wysłać linku resetującego. Sprawdź adres e-mail i spróbuj ponownie.',
+    emailRequired: 'Wpisz adres e-mail.',
     invalidEmail: 'Wpisz poprawny adres e-mail.',
+    rateLimited: 'Zbyt wiele prób resetu hasła. Poczekaj chwilę i spróbuj ponownie.',
     resetUnavailable: 'Reset hasła nie jest dostępny, ponieważ Supabase nie jest skonfigurowany.',
     backToLogin: 'Wróć do logowania',
   },
@@ -61,7 +65,9 @@ const copy = {
     resetSubmitting: 'Sending...',
     resetSuccess: 'If the account exists, a reset link has been sent to the email address.',
     resetError: 'Could not send the reset link. Check the email address and try again.',
+    emailRequired: 'Enter your email address.',
     invalidEmail: 'Enter a valid email address.',
+    rateLimited: 'Too many password reset requests. Wait a moment and try again.',
     resetUnavailable: 'Password reset is not available because Supabase is not configured.',
     backToLogin: 'Back to login',
   },
@@ -101,7 +107,12 @@ export default function LoginView({ lang, onLogin, onRequestPasswordReset }: Log
     setResetError(null);
     setResetMessage(null);
 
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+    const normalizedEmail = email.trim();
+    if (!normalizedEmail) {
+      setResetError(text.emailRequired);
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
       setResetError(text.invalidEmail);
       return;
     }
@@ -109,13 +120,20 @@ export default function LoginView({ lang, onLogin, onRequestPasswordReset }: Log
     setResetLoading(true);
 
     try {
-      const result = await onRequestPasswordReset(email);
+      const result = await onRequestPasswordReset(normalizedEmail);
       if (result.error) {
-        setResetError(
-          result.error === 'PASSWORD_RESET_UNAVAILABLE'
-            ? text.resetUnavailable
-            : text.resetError,
-        );
+        if (result.error === 'PASSWORD_RESET_UNAVAILABLE') {
+          setResetError(text.resetUnavailable);
+        } else if (result.error === 'PASSWORD_RESET_RATE_LIMITED') {
+          setResetError(text.rateLimited);
+        } else if (
+          result.error === 'PASSWORD_RESET_EMAIL_REQUIRED'
+          || result.error === 'PASSWORD_RESET_EMAIL_INVALID'
+        ) {
+          setResetError(text.invalidEmail);
+        } else {
+          setResetError(text.resetError);
+        }
       } else {
         setResetMessage(text.resetSuccess);
       }

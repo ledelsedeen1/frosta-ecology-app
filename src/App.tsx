@@ -821,6 +821,9 @@ export default function App() {
     authService.consumePasswordRecoveryUrl(window.location.href).then(result => {
       if (cancelled) return;
       setPasswordRecoveryError(Boolean(result.error || !result.recovered));
+      if (result.error || result.recovered) {
+        window.history.replaceState({}, document.title, '/reset-password');
+      }
     });
 
     return () => {

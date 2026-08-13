@@ -4,6 +4,8 @@ import { normalizeRole } from '../roleUtils';
 
 const ANDROID_PASSWORD_RECOVERY_REDIRECT_URL =
   'no.divingecologyfrosta.app://auth/reset-password';
+const PASSWORD_RESET_PATH = '/reset-password';
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const env = (import.meta as any).env ?? {};
@@ -46,7 +48,7 @@ function passwordResetRedirectUrl(): string {
   if (configuredUrl) return configuredUrl;
 
   if (typeof window !== 'undefined') {
-    return new URL('/reset-password', window.location.origin).toString();
+    return new URL(PASSWORD_RESET_PATH, window.location.origin).toString();
   }
 
   return ANDROID_PASSWORD_RECOVERY_REDIRECT_URL;
@@ -62,6 +64,14 @@ function recoveryParameters(urlValue: string): URLSearchParams {
   });
 
   return parameters;
+}
+
+function isRateLimitError(error: { message?: string; status?: number }): boolean {
+  const message = error.message?.toLowerCase() ?? '';
+  return error.status === 429
+    || message.includes('rate limit')
+    || message.includes('too many')
+    || message.includes('email rate limit');
 }
 
 export const authService = {
@@ -133,6 +143,11 @@ export const authService = {
     if (isDemoMode() || !supabase) return { error: 'PASSWORD_RESET_UNAVAILABLE' };
 
     const normalizedEmail = email.trim();
+    if (!normalizedEmail) return { error: 'PASSWORD_RESET_EMAIL_REQUIRED' };
+    if (!EMAIL_PATTERN.test(normalizedEmail)) {
+      return { error: 'PASSWORD_RESET_EMAIL_INVALID' };
+    }
+
     const redirectTo = passwordResetRedirectUrl();
     const { error } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
       redirectTo,
@@ -148,7 +163,13 @@ export const authService = {
       });
     }
 
-    return { error: error ? 'PASSWORD_RESET_REQUEST_FAILED' : null };
+    return {
+      error: error
+        ? isRateLimitError(error)
+          ? 'PASSWORD_RESET_RATE_LIMITED'
+          : 'PASSWORD_RESET_REQUEST_FAILED'
+        : null,
+    };
   },
 
   async consumePasswordRecoveryUrl(
@@ -166,6 +187,8 @@ export const authService = {
       const code = parameters.get('code');
       const accessToken = parameters.get('access_token');
       const refreshToken = parameters.get('refresh_token');
+      const isRecoveryToken = parameters.get('type') === 'recovery'
+        || parameters.get('passwordRecovery') === '1';
 
       if (code) {
         const { error } = await supabase.auth.exchangeCodeForSession(code);
@@ -175,7 +198,7 @@ export const authService = {
         };
       }
 
-      if (accessToken && refreshToken) {
+      if (accessToken && refreshToken && isRecoveryToken) {
         const { error } = await supabase.auth.setSession({
           access_token: accessToken,
           refresh_token: refreshToken,
@@ -186,11 +209,7 @@ export const authService = {
         };
       }
 
-      const { data } = await supabase.auth.getSession();
-      return {
-        recovered: Boolean(data.session),
-        error: data.session ? null : 'PASSWORD_RECOVERY_LINK_INVALID',
-      };
+      return { recovered: false, error: 'PASSWORD_RECOVERY_LINK_INVALID' };
     } catch {
       return { recovered: false, error: 'PASSWORD_RECOVERY_LINK_INVALID' };
     }
